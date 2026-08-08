@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>3D Robotkar - Three.js</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#f6f7fb;
+    font-family:Segoe UI,sans-serif;
+}
+
+#ui{
+    position:absolute;
+    top:20px;
+    left:20px;
+    z-index:100;
+    width:300px;
+
+    background:white;
+    padding:20px;
+    border-radius:15px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.1);
+}
+
+#camera-ui{
+    position:absolute;
+    top:20px;
+    right:20px;
+    z-index:100;
+    width:300px;
+
+    background:white;
+    padding:20px;
+    border-radius:15px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.1);
+}
+
+#topPanelToggle{
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:110;
+
+    background:#4f33c8;
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:6px 14px;
+    font-size:13px;
+    cursor:pointer;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.15);
+}
+
+#top-panel{
+    position:absolute;
+    top:60px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:100;
+    width:320px;
+
+    background:white;
+    padding:15px 20px 20px;
+    border-radius:15px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.1);
+
+    text-align:center;
+
+    max-height:600px;
+    overflow:hidden;
+
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+
+#top-panel.collapsed{
+    max-height:0;
+    opacity:0;
+    padding-top:0;
+    padding-bottom:0;
+}
+
+#resetBtn{
+    margin-top:16px;
+
+    padding:12px 22px;
+    font-size:16px;
+    border:none;
+    border-radius:12px;
+    background:#4f33c8;
+    color:white;
+    cursor:pointer;
+}
+
+#timer-ui{
+    margin-top:15px;
+    padding:12px;
+    background:#efeaff;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    text-align:center;
+}
+
+#startBtn{
+    display:block;
+    margin:10px auto 0;
+    padding:8px 18px;
+    border:none;
+    border-radius:8px;
+    background:#4f33c8;
+    color:white;
+    cursor:pointer;
+    font-size:14px;
+}
+
+#collision-msg{
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:300;
+    display:none;
+
+    background:#e63946;
+    color:white;
+    padding:16px 28px;
+    border-radius:12px;
+    font-weight:bold;
+    font-size:16px;
+    text-align:center;
+
+    box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
+
+#stats-modal{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    z-index:250;
+    display:none;
+
+    background:white;
+    padding:26px 34px;
+    border-radius:16px;
+    text-align:center;
+    min-width:260px;
+
+    box-shadow:0 10px 40px rgba(0,0,0,.35);
+}
+
+#stats-modal h2{
+    margin:0 0 14px;
+    color:#2ecc71;
+}
+
+#stats-modal p{
+    margin:6px 0;
+}
+
+#stats-modal ul{
+    list-style:none;
+    padding:0;
+    margin:10px 0 4px;
+    text-align:left;
+    display:inline-block;
+}
+
+#stats-modal li{
+    padding:2px 0;
+    font-size:14px;
+}
+
+h3{
+    margin:20px 0 10px;
+    font-size:15px;
+    color:#4f33c8;
+}
+
+.torque{
+    display:block;
+    font-size:12px;
+    font-weight:bold;
+    margin-top:4px;
+}
+
+.torque-ok{
+    color:#2ecc71;
+}
+
+.torque-warn{
+    color:#e6a800;
+}
+
+.torque-danger{
+    color:#e63946;
+}
+
+.joint-color-dot{
+    display:inline-block;
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    margin-right:6px;
+    vertical-align:middle;
+    box-shadow:0 0 0 1px rgba(0,0,0,.15);
+}
+
+#torque-warning{
+    position:fixed;
+    bottom:100px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:100;
+    display:none;
+
+    background:#e63946;
+    color:white;
+    padding:8px 20px;
+    border-radius:10px;
+    font-weight:bold;
+    text-align:center;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.2);
+
+    animation: blink 0.6s step-start infinite;
+}
+
+@keyframes blink{
+    50%{ opacity:0; }
+}
+
+#joint-tooltip{
+    position:fixed;
+    z-index:200;
+    display:none;
+    pointer-events:none;
+
+    max-width:280px;
+
+    background:rgba(30,20,60,0.95);
+    color:white;
+    padding:12px 16px;
+    border-radius:10px;
+    font-size:13px;
+    line-height:1.5;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.3);
+}
+
+#joint-tooltip strong{
+    display:block;
+    margin-bottom:6px;
+    color:#c7b8ff;
+    font-size:14px;
+}
+
+#joint-tooltip em{
+    color:#ffd166;
+    font-style:normal;
+}
+
+label{
+    display:block;
+    margin-bottom:15px;
+}
+
+input[type=range]{
+    width:100%;
+}
+
+#info{
+    margin-top:15px;
+    padding:10px;
+    background:#efeaff;
+    border-radius:10px;
+}
+
+canvas{
+    display:block;
+}
+
+</style>
+</head>
+<body>
+
+<button id="topPanelToggle">▲ Elrejt</button>
+
+<div id="top-panel">
+
+    <label>
+        Lerakási pontosság: <span id="accuracyValue">90</span>%
+        <input id="accuracy" type="range" min="0" max="100" value="90">
+    </label>
+
+    <label>
+        Tárgy súlya: <span id="weightValue">1.0</span> kg
+        <input id="weightSlider" type="range" min="0" max="10" step="0.1" value="1">
+    </label>
+
+    <h3>Megjelenítés</h3>
+
+    <label>
+        <input id="productionMode" type="checkbox"> Gyártási szimuláció
+    </label>
+
+    <label>
+        <input id="showProjection" type="checkbox"> TCP vetülete a síkra
+    </label>
+
+    <label>
+        <input id="showPath" type="checkbox"> TCP útvonal rajzolása
+    </label>
+
+    <label>
+        <input id="showJacobian" type="checkbox"> Jacobi-vizualizáció (TCP nyilak)
+    </label>
+   
+
+    <h3>Biztonság</h3>
+
+    <label>
+        <input id="obstaclesToggle" type="checkbox"> Akadályok megjelenítése
+    </label>
+
+    <label>
+        <input id="domeToggle" type="checkbox"> Munkatér kupola
+    </label>
+
+    
+
+</div>
+
+<div id="ui">
+
+    <h2>Robotkar</h2>
+
+    <label>
+        <span class="joint-color-dot" style="background:#ff5252"></span>1. csukló – Derékforgás / Base (Waist)
+        <input id="q1" type="range" min="-180" max="180" value="0">
+        <span class="torque" id="q1-torque">0.00 Nm (0%)</span>
+    </label>
+
+    <label>
+        <span class="joint-color-dot" style="background:#ffb142"></span>2. csukló – Váll / Shoulder
+        <input id="q2" type="range" min="-90" max="90" value="69.66">
+        <span class="torque" id="q2-torque">0.00 Nm (0%)</span>
+    </label>
+
+    <label>
+        <span class="joint-color-dot" style="background:#fdd835"></span>3. csukló – Könyök / Elbow
+        <input id="q3" type="range" min="-90" max="90" value="-90">
+        <span class="torque" id="q3-torque">0.00 Nm (0%)</span>
+    </label>
+
+    <label>
+        <span class="joint-color-dot" style="background:#66bb6a"></span>4. csukló – Alkarhajlítás / Forearm Pitch
+        <input id="q4" type="range" min="-90" max="90" value="-90">
+        <span class="torque" id="q4-torque">0.00 Nm (0%)</span>
+    </label>
+
+    <label>
+        <span class="joint-color-dot" style="background:#42a5f5"></span>5. csukló – Csuklóhajlítás / Wrist Pitch
+        <input id="q5" type="range" min="-90" max="90" value="36.50">
+        <span class="torque" id="q5-torque">0.00 Nm (0%)</span>
+    </label>
+
+    <label>
+        <span class="joint-color-dot" style="background:#ab47bc"></span>6. csukló – Szerszámforgás / Tool Roll
+        <input id="q6" type="range" min="-180" max="180" value="0">
+        <span class="torque" id="q6-torque">0.00 Nm (0%)</span>
+    </label>
+
+    <div id="info">
+        TCP: x=0 y=0 z=0
+    </div>
+
+</div>
+
+<div id="camera-ui">
+
+    <h2>Kamera</h2>
+
+    <label>
+        Kamera X
+        <input id="camX" type="range" min="-20" max="20" step="0.1" value="8">
+    </label>
+
+    <label>
+        Kamera Y
+        <input id="camY" type="range" min="-20" max="20" step="0.1" value="1">
+    </label>
+
+    <label>
+        Kamera Z
+        <input id="camZ" type="range" min="-20" max="20" step="0.1" value="8">
+    </label>
+
+    <label>
+        Néz felé X
+        <input id="lookX" type="range" min="-10" max="10" step="0.1" value="1">
+    </label>
+
+    <label>
+        Néz felé Y
+        <input id="lookY" type="range" min="-10" max="10" step="0.1" value="3">
+    </label>
+
+    <label>
+        Néz felé Z
+        <input id="lookZ" type="range" min="-10" max="10" step="0.1" value="1">
+    </label>
+
+    <div id="timer-ui">
+        <span id="timerText">Idő: 0.0 s</span>
+        <button id="startBtn">Start</button>
+    </div>
+
+</div>
+
+<div id="collision-msg"></div>
+
+<div id="stats-modal">
+
+    <h2>Sikeres lerakás! ✅</h2>
+
+    <p>Idő: <strong id="statsTime">0.0</strong> s</p>
+    <p>Ütközések száma: <strong id="statsCollisions">0</strong></p>
+    <p>Maximális csuklóterhelések:</p>
+
+    <ul id="statsTorques"></ul>
+
+    <button id="resetBtn">Újra</button>
+
+</div>
+
+<div id="torque-warning">🛑 Vészleállítás! Túllterhelt csukló</div>
+
+<div id="joint-tooltip"></div>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.179/build/three.module.js";
+
+//import { OrbitControls }
+//from "https://unpkg.com/three@0.179/examples/jsm/controls/OrbitControls.js";
+
+
+// --------------------
+// Scene
+// --------------------
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf6f7fb);
+
+const camera =
+new THREE.PerspectiveCamera(
+45,
+window.innerWidth/window.innerHeight,
+0.1,
+100
+);
+
+camera.position.set(8,1,8);
+camera.lookAt(1,3,1);
+
+const camX = document.getElementById("camX");
+const camY = document.getElementById("camY");
+const camZ = document.getElementById("camZ");
+const lookX = document.getElementById("lookX");
+const lookY = document.getElementById("lookY");
+const lookZ = document.getElementById("lookZ");
+
+function updateCamera(){
+
+    camera.position.set(
+    Number(camX.value),
+    Number(camY.value),
+    Number(camZ.value)
+    );
+
+    camera.lookAt(
+    Number(lookX.value),
+    Number(lookY.value),
+    Number(lookZ.value)
+    );
+}
+
+[camX,camY,camZ,lookX,lookY,lookZ].forEach(
+(el) => el.addEventListener("input",updateCamera)
+);
+
+updateCamera();
+
+// --------------------
+// Felső panel ki-be csúszás
+// --------------------
+
+const topPanel =
+document.getElementById("top-panel");
+
+const topPanelToggle =
+document.getElementById("topPanelToggle");
+
+topPanelToggle.addEventListener("click",()=>{
+
+    const collapsed =
+    topPanel.classList.toggle("collapsed");
+
+    topPanelToggle.textContent =
+    collapsed ? "▼ Mutat" : "▲ Elrejt";
+});
+
+const renderer =
+new THREE.WebGLRenderer({
+    antialias:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(renderer.domElement);
+
+// --------------------
+// Orbit
+// --------------------
+
+// const controls =
+// new OrbitControls(
+// camera,
+// renderer.domElement
+// );
+
+//controls.enableDamping = true;
+
+// --------------------
+// Light
+// --------------------
+
+scene.add(
+new THREE.AmbientLight(
+0xffffff,
+1
+));
+
+const dir =
+new THREE.DirectionalLight(
+0xffffff,
+2
+);
+
+dir.position.set(
+5,
+8,
+5
+);
+
+scene.add(dir);
+
+// --------------------
+// Grid
+// --------------------
+
+const grid =
+new THREE.GridHelper(20,20);
+
+scene.add(grid);
+
+// --------------------
+// Axes
+// --------------------
+
+scene.add(
+new THREE.AxesHelper(3)
+);
+
+// --------------------
+// Robot
+// --------------------
+
+const robot =
+new THREE.Group();
+
+scene.add(robot);
+
+// alap
+
+const base =
+new THREE.Mesh(
+
+    new THREE.CylinderGeometry(
+    0.5,
+    0.5,
+    0.3
+    ),
+
+    new THREE.MeshStandardMaterial({
+        color:0x4f33c8
+    })
+
+);
+
+robot.add(base);
+
+// csukló 1
+
+const joint1 =
+new THREE.Group();
+
+joint1.position.y = 0.15;
+
+robot.add(joint1);
+
+const link1 =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.35,0.6,0.35
+),
+
+new THREE.MeshStandardMaterial({
+    color:0x6f5cff
+})
+
+);
+
+link1.position.y = 0.3;
+
+joint1.add(link1);
+
+// csukló 2
+
+const joint2 =
+new THREE.Group();
+
+joint2.position.y = 0.6;
+
+joint1.add(joint2);
+
+const link2 =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.35,1.4,0.35
+),
+
+new THREE.MeshStandardMaterial({
+    color:0x866fff
+})
+
+);
+
+link2.position.y = 0.7;
+
+joint2.add(link2);
+
+// csukló 3
+
+const joint3 =
+new THREE.Group();
+
+joint3.position.y = 1.4;
+
+joint2.add(joint3);
+
+const link3 =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.3,1,0.3
+),
+
+new THREE.MeshStandardMaterial({
+    color:0xa897ff
+})
+
+);
+
+link3.position.y = 0.5;
+
+joint3.add(link3);
+
+// csukló 4 (csukló forgás)
+
+const joint4 =
+new THREE.Group();
+
+joint4.position.y = 1;
+
+joint3.add(joint4);
+
+const link4 =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.25,0.6,0.25
+),
+
+new THREE.MeshStandardMaterial({
+    color:0xc0b3ff
+})
+
+);
+
+link4.position.y = 0.3;
+
+joint4.add(link4);
+
+// csukló 5 (csukló hajlítás)
+
+const joint5 =
+new THREE.Group();
+
+joint5.position.y = 0.6;
+
+joint4.add(joint5);
+
+const link5 =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.2,0.4,0.2
+),
+
+new THREE.MeshStandardMaterial({
+    color:0xd9d0ff
+})
+
+);
+
+link5.position.y = 0.2;
+
+joint5.add(link5);
+
+// csukló 6 (szerszám forgás)
+
+const joint6 =
+new THREE.Group();
+
+joint6.position.y = 0.4;
+
+joint5.add(joint6);
+
+const link6 =
+new THREE.Mesh(
+
+new THREE.CylinderGeometry(
+0.12,0.12,0.15
+),
+
+new THREE.MeshStandardMaterial({
+    color:0xf0ecff
+})
+
+);
+
+link6.position.y = 0.075;
+
+joint6.add(link6);
+
+// TCP
+
+const tcp =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+0.15,
+32,
+32
+),
+
+new THREE.MeshStandardMaterial({
+    color:0xff5a1f
+})
+
+);
+
+tcp.position.y = 0.15;
+
+joint6.add(tcp);
+
+// --------------------
+// Csukló oktatási buborék
+// --------------------
+
+const jointTooltip =
+document.getElementById("joint-tooltip");
+
+const JOINT_INFO = {
+q1:{
+    title:"1. csukló – Derékforgás (Base / Waist)",
+    task:"A robot azimut (vízszintes) elforgatása, a munkatartomány kiválasztása.",
+    effect:"Az egész kar elfordul a függőleges tengely körül, a TCP oldalirányban mozdul el.",
+    note:"Nincs gravitációs nyomatéka, mert függőleges tengely körül forog."
+},
+q2:{
+    title:"2. csukló – Vállcsukló (Shoulder)",
+    task:"A kar fő emelése.",
+    effect:"Emelkedik a TCP, nő a váll nyomatéka, csökken a munkatér tartalék.",
+    note:"Ez a legterheltebb tengely, mert ez tartja a teljes kar és a tárgy súlyát a leghosszabb emelőkarral."
+},
+q3:{
+    title:"3. csukló – Könyökcsukló (Elbow)",
+    task:"A kar kinyúlásának finomhangolása.",
+    effect:"Változik a vízszintes elérési táv, közepes nyomatékterhelés.",
+    note:"Kevésbé terhelt, mint a váll, mert rövidebb a rákapcsolódó kar."
+},
+q4:{
+    title:"4. csukló – Alkarhajlítás (Forearm Pitch)",
+    task:"Az alkar megdöntése a könyök után, a TCP magasságának és távolságának finomhangolása.",
+    effect:"Emelkedik/süllyed a TCP, közepes mértékben nő a nyomaték, csökken a munkatér tartalék.",
+    note:"Rövidebb emelőkarral dolgozik, mint a váll vagy a könyök, ezért kevésbé terhelt náluk, de jobban, mint a csuklóhajlítás."
+},
+q5:{
+    title:"5. csukló – Csuklóhajlítás (Wrist Pitch)",
+    task:"A szerszám döntése, finom pozicionálás a célpont felett.",
+    effect:"Kis mértékben módosítja a TCP magasságát, alacsony nyomatékterhelés.",
+    note:"Rövid emelőkar miatt ez viseli a legkisebb nyomatékot a hajlító csuklók közül."
+},
+q6:{
+    title:"6. csukló – Szerszámforgás (Tool Roll)",
+    task:"A szerszám/tárgy hossztengely körüli elforgatása.",
+    effect:"Nincs pozícióváltozás, csak orientáció; a gravitációs nyomaték nulla.",
+    note:"A lánc legvégén van, a legkisebb tehetetlenségű elemet mozgatja."
+}
+};
+
+const HOVER_TARGETS = [
+{ mesh:base, joint:"q1" },
+{ mesh:link1, joint:"q1" },
+{ mesh:link2, joint:"q2" },
+{ mesh:link3, joint:"q3" },
+{ mesh:link4, joint:"q4" },
+{ mesh:link5, joint:"q5" },
+{ mesh:link6, joint:"q6" },
+{ mesh:tcp, joint:"q6" }
+];
+
+const hoverMeshes = HOVER_TARGETS.map((h)=>h.mesh);
+
+const hoverRaycaster = new THREE.Raycaster();
+const hoverPointer = new THREE.Vector2();
+
+renderer.domElement.addEventListener("mousemove",(event)=>{
+
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    hoverPointer.x = ((event.clientX - rect.left)/rect.width)*2 - 1;
+    hoverPointer.y = -((event.clientY - rect.top)/rect.height)*2 + 1;
+
+    hoverRaycaster.setFromCamera(hoverPointer,camera);
+
+    const intersects =
+    hoverRaycaster.intersectObjects(hoverMeshes,false);
+
+    if(intersects.length > 0){
+
+        const hit =
+        HOVER_TARGETS.find((h)=>h.mesh === intersects[0].object);
+
+        const info = JOINT_INFO[hit.joint];
+
+        jointTooltip.innerHTML =
+        `
+        <strong>${info.title}</strong>
+        <em>Feladata:</em> ${info.task}<br>
+        <em>Hatása:</em> ${info.effect}<br><br>
+        ${info.note}
+        `;
+
+        jointTooltip.style.display = "block";
+        jointTooltip.style.left = (event.clientX + 18) + "px";
+        jointTooltip.style.top = (event.clientY + 18) + "px";
+
+    } else {
+        jointTooltip.style.display = "none";
+    }
+});
+
+renderer.domElement.addEventListener("mouseleave",()=>{
+    jointTooltip.style.display = "none";
+});
+
+// --------------------
+// Pick & Place
+// --------------------
+
+const target = { x:1.3, z:1.3 };
+const TARGET_HEIGHT = 0.5;
+
+const OBJECT_WIDTH = 0.3;
+const OBJECT_DEPTH = 0.4;
+const OBJECT_HALF_WIDTH = OBJECT_WIDTH/2;
+const OBJECT_HALF_DEPTH = OBJECT_DEPTH/2;
+const PLATFORM_HEIGHT = 0.45;
+const PRODUCTION_TOLERANCE_PERCENT = 10;
+const FIT_MARGIN = OBJECT_WIDTH * (PRODUCTION_TOLERANCE_PERCENT/100);
+const MIN_TOLERANCE_MARGIN = 0.02;
+const MAX_TOLERANCE_MARGIN = 1.0;
+
+// HOME pozíció: TCP ≈ (0.27, 2.16, 0)
+const HOME_POSE = {
+q1:0,
+q2:69.66,
+q3:-90,
+q4:-90,
+q5:36.50,
+q6:0
+};
+
+const toleranceZone =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+(OBJECT_HALF_WIDTH+MAX_TOLERANCE_MARGIN)*2,
+PLATFORM_HEIGHT,
+(OBJECT_HALF_DEPTH+MAX_TOLERANCE_MARGIN)*2
+),
+
+new THREE.MeshBasicMaterial({
+    color:0xff9e9e
+})
+
+);
+
+toleranceZone.position.set(target.x,PLATFORM_HEIGHT/2,target.z);
+
+scene.add(toleranceZone);
+
+const targetZone =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(OBJECT_WIDTH,0.03,OBJECT_DEPTH),
+
+new THREE.MeshBasicMaterial({
+    color:0x8be8a5
+})
+
+);
+
+targetZone.position.set(target.x,PLATFORM_HEIGHT+0.015,target.z);
+
+scene.add(targetZone);
+
+const accuracy =
+document.getElementById("accuracy");
+
+const accuracyValue =
+document.getElementById("accuracyValue");
+
+const resetBtn =
+document.getElementById("resetBtn");
+
+const PICKUP_TOLERANCE = 0.35;
+
+let toleranceMargin = MAX_TOLERANCE_MARGIN;
+
+function updateToleranceRadius(){
+
+    const percent = Number(accuracy.value);
+
+    toleranceMargin =
+    MAX_TOLERANCE_MARGIN -
+    (MAX_TOLERANCE_MARGIN - MIN_TOLERANCE_MARGIN) *
+    (percent/100);
+
+    toleranceZone.geometry.dispose();
+
+    toleranceZone.geometry = new THREE.BoxGeometry(
+    (OBJECT_HALF_WIDTH+toleranceMargin)*2,
+    PLATFORM_HEIGHT,
+    (OBJECT_HALF_DEPTH+toleranceMargin)*2
+    );
+
+    accuracyValue.textContent = percent;
+}
+
+let pickObject = null;
+let picked = false;
+let placed = false;
+
+let orphanObjects = [];
+
+let collisionCount = 0;
+let wasColliding = false;
+
+let maxTorquePercent = {
+q1:0, q2:0, q3:0, q4:0, q5:0, q6:0
+};
+
+function randomObjectPosition(){
+
+    let pos;
+
+    do {
+
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 1.2 + Math.random() * 1.3;
+
+        pos = new THREE.Vector3(
+        Math.cos(angle) * radius,
+        0.5,
+        Math.sin(angle) * radius
+        );
+
+    } while(
+    Math.hypot(
+    pos.x - target.x,
+    pos.z - target.z
+    ) < 1.5
+    );
+
+    return pos;
+}
+
+const pickupStand =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+OBJECT_WIDTH+0.1,
+PLATFORM_HEIGHT,
+OBJECT_DEPTH+0.1
+),
+
+new THREE.MeshStandardMaterial({
+    color:0x777788
+})
+
+);
+
+scene.add(pickupStand);
+
+// --------------------
+// Gyártási szimuláció
+// --------------------
+
+const productionMode =
+document.getElementById("productionMode");
+
+const CONVEYOR_PICKUP = { x:-1.8, z:-1.0 };
+
+const conveyorGroup =
+new THREE.Group();
+
+scene.add(conveyorGroup);
+
+const conveyorBelt =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(0.5,PLATFORM_HEIGHT,1.8),
+
+new THREE.MeshStandardMaterial({
+    color:0x555566
+})
+
+);
+
+conveyorBelt.position.set(
+CONVEYOR_PICKUP.x,
+PLATFORM_HEIGHT/2,
+CONVEYOR_PICKUP.z + 0.5
+);
+
+conveyorGroup.add(conveyorBelt);
+
+const conveyorMarker =
+new THREE.Mesh(
+
+new THREE.CircleGeometry(0.22,24),
+
+new THREE.MeshBasicMaterial({
+    color:0xffd166,
+    transparent:true,
+    opacity:0.85,
+    side:THREE.DoubleSide
+})
+
+);
+
+conveyorMarker.rotation.x = -Math.PI/2;
+conveyorMarker.position.set(
+CONVEYOR_PICKUP.x,
+PLATFORM_HEIGHT + 0.005,
+CONVEYOR_PICKUP.z
+);
+
+conveyorGroup.add(conveyorMarker);
+
+conveyorGroup.visible = false;
+
+const nestMesh =
+new THREE.Group();
+
+const nestBody =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+(OBJECT_HALF_WIDTH+0.05)*2,
+PLATFORM_HEIGHT,
+(OBJECT_HALF_DEPTH+0.05)*2
+),
+
+new THREE.MeshStandardMaterial({
+    color:0x333344
+})
+
+);
+
+nestBody.position.y = PLATFORM_HEIGHT/2;
+
+nestMesh.add(nestBody);
+
+const nestSocket =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+(OBJECT_HALF_WIDTH+FIT_MARGIN)*2,
+0.03,
+(OBJECT_HALF_DEPTH+FIT_MARGIN)*2
+),
+
+new THREE.MeshStandardMaterial({
+    color:0xffd166
+})
+
+);
+
+nestSocket.position.y = PLATFORM_HEIGHT - 0.015;
+
+nestMesh.add(nestSocket);
+
+nestMesh.position.set(target.x,0,target.z);
+nestMesh.visible = false;
+
+scene.add(nestMesh);
+
+function getSpawnPosition(){
+
+    if(productionMode.checked){
+        return new THREE.Vector3(
+        CONVEYOR_PICKUP.x,
+        0.5,
+        CONVEYOR_PICKUP.z
+        );
+    }
+
+    return randomObjectPosition();
+}
+
+function isWithinDropZone(worldPos){
+
+    const objectBox =
+    new THREE.Box3().setFromObject(pickObject);
+
+    const objectCenter = new THREE.Vector3();
+    objectBox.getCenter(objectCenter);
+
+    const margin =
+    productionMode.checked ? FIT_MARGIN : toleranceMargin;
+
+    const allowedHalfWidth = OBJECT_HALF_WIDTH + margin;
+    const allowedHalfDepth = OBJECT_HALF_DEPTH + margin;
+
+    const dy = Math.abs(objectCenter.y - TARGET_HEIGHT);
+
+    const fitsX =
+    objectBox.min.x >= (target.x - allowedHalfWidth) &&
+    objectBox.max.x <= (target.x + allowedHalfWidth);
+
+    const fitsZ =
+    objectBox.min.z >= (target.z - allowedHalfDepth) &&
+    objectBox.max.z <= (target.z + allowedHalfDepth);
+
+    return fitsX && fitsZ && dy < 0.06;
+}
+
+function getDropZoneDiagnostics(){
+
+    const objectBox =
+    new THREE.Box3().setFromObject(pickObject);
+
+    const objectCenter = new THREE.Vector3();
+    objectBox.getCenter(objectCenter);
+
+    const margin =
+    productionMode.checked ? FIT_MARGIN : toleranceMargin;
+
+    const allowedHalfWidth = OBJECT_HALF_WIDTH + margin;
+    const allowedHalfDepth = OBJECT_HALF_DEPTH + margin;
+
+    const overX = Math.max(
+    (target.x - allowedHalfWidth) - objectBox.min.x,
+    objectBox.max.x - (target.x + allowedHalfWidth),
+    0
+    );
+
+    const overZ = Math.max(
+    (target.z - allowedHalfDepth) - objectBox.min.z,
+    objectBox.max.z - (target.z + allowedHalfDepth),
+    0
+    );
+
+    const dy = Math.abs(objectCenter.y - TARGET_HEIGHT);
+
+    return { overX, overZ, dy };
+}
+
+productionMode.addEventListener("change",()=>{
+
+    conveyorGroup.visible = productionMode.checked;
+    nestMesh.visible = productionMode.checked;
+
+    targetZone.visible = !productionMode.checked;
+    toleranceZone.visible = !productionMode.checked;
+
+    accuracy.disabled = productionMode.checked;
+
+    spawnObject();
+    resetTimer();
+});
+
+function createPickupMesh(){
+
+    return new THREE.Mesh(
+
+    new THREE.BoxGeometry(OBJECT_WIDTH,0.1,OBJECT_DEPTH),
+
+    new THREE.MeshStandardMaterial({
+        color:0xffb020
+    })
+
+    );
+}
+
+function placeNewPickupObject(){
+
+    const spawnPos = getSpawnPosition();
+
+    pickObject = createPickupMesh();
+    pickObject.position.copy(spawnPos);
+
+    scene.add(pickObject);
+
+    pickupStand.visible = !productionMode.checked;
+    pickupStand.position.set(spawnPos.x,PLATFORM_HEIGHT/2,spawnPos.z);
+
+    picked = false;
+    placed = false;
+}
+
+function spawnObject(){
+
+    orphanObjects.forEach((obj)=>{
+        tcp.remove(obj);
+    });
+
+    orphanObjects = [];
+
+    if(pickObject){
+        scene.remove(pickObject);
+    }
+
+    placeNewPickupObject();
+
+    collisionCount = 0;
+    maxTorquePercent = { q1:0, q2:0, q3:0, q4:0, q5:0, q6:0 };
+
+    statsModal.style.display = "none";
+}
+
+function spawnReplacementObject(){
+
+    // a felvett tárgy a karon marad (megjelöljük elárvultként),
+    // csak egy új tárgy jelenik meg felvételre
+    if(pickObject){
+        orphanObjects.push(pickObject);
+    }
+
+    placeNewPickupObject();
+}
+
+accuracy.addEventListener("input",updateToleranceRadius);
+
+const statsModal =
+document.getElementById("stats-modal");
+
+const statsTime =
+document.getElementById("statsTime");
+
+const statsCollisions =
+document.getElementById("statsCollisions");
+
+const statsTorques =
+document.getElementById("statsTorques");
+
+function showStatsModal(){
+
+    statsTime.textContent = finalElapsedSeconds.toFixed(1);
+    statsCollisions.textContent = collisionCount;
+
+    statsTorques.innerHTML = "";
+
+    for(const key of Object.keys(maxTorquePercent)){
+
+        const li = document.createElement("li");
+
+        li.textContent =
+        `${key.toUpperCase()}: ${maxTorquePercent[key].toFixed(0)}%`;
+
+        statsTorques.appendChild(li);
+    }
+
+    statsModal.style.display = "block";
+}
+
+resetBtn.addEventListener("click",()=>{
+
+    q1.value = HOME_POSE.q1;
+    q2.value = HOME_POSE.q2;
+    q3.value = HOME_POSE.q3;
+    q4.value = HOME_POSE.q4;
+    q5.value = HOME_POSE.q5;
+    q6.value = HOME_POSE.q6;
+
+    accuracy.value = 90;
+
+    updateToleranceRadius();
+    spawnObject();
+    resetPath();
+    updateRobot();
+    resetTimer();
+
+});
+
+updateToleranceRadius();
+spawnObject();
+
+// --------------------
+// Megjelenítés: TCP vetület
+// --------------------
+
+const showProjection =
+document.getElementById("showProjection");
+
+const projectionMarker =
+new THREE.Mesh(
+
+new THREE.CircleGeometry(0.08,24),
+
+new THREE.MeshBasicMaterial({
+    color:0x333333,
+    side:THREE.DoubleSide
+})
+
+);
+
+projectionMarker.rotation.x = -Math.PI/2;
+projectionMarker.visible = false;
+
+scene.add(projectionMarker);
+
+const projectionLine =
+new THREE.Line(
+
+new THREE.BufferGeometry().setFromPoints([
+new THREE.Vector3(),
+new THREE.Vector3()
+]),
+
+new THREE.LineDashedMaterial({
+    color:0x333333,
+    dashSize:0.1,
+    gapSize:0.08
+})
+
+);
+
+projectionLine.visible = false;
+projectionLine.frustumCulled = false;
+
+scene.add(projectionLine);
+
+showProjection.addEventListener("change",()=>{
+
+    projectionMarker.visible = showProjection.checked;
+    projectionLine.visible = showProjection.checked;
+});
+
+function updateProjection(worldPos){
+
+    if(!showProjection.checked) return;
+
+    projectionMarker.position.set(worldPos.x,0.01,worldPos.z);
+
+    projectionLine.geometry.setFromPoints([
+    worldPos,
+    new THREE.Vector3(worldPos.x,0,worldPos.z)
+    ]);
+
+    projectionLine.computeLineDistances();
+}
+
+// --------------------
+// Megjelenítés: TCP útvonal
+// --------------------
+
+const showPath =
+document.getElementById("showPath");
+
+let pathPoints = [];
+
+const pathLine =
+new THREE.Line(
+
+new THREE.BufferGeometry(),
+
+new THREE.LineBasicMaterial({
+    color:0xff5a1f
+})
+
+);
+
+pathLine.visible = false;
+pathLine.frustumCulled = false;
+
+scene.add(pathLine);
+
+const pathDots =
+new THREE.Points(
+
+new THREE.BufferGeometry(),
+
+new THREE.PointsMaterial({
+    color:0xff5a1f,
+    size:0.07,
+    sizeAttenuation:true
+})
+
+);
+
+pathDots.visible = false;
+pathDots.frustumCulled = false;
+
+scene.add(pathDots);
+
+function rebuildPathGeometry(){
+
+    pathLine.geometry.dispose();
+    pathLine.geometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+
+    pathDots.geometry.dispose();
+    pathDots.geometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+}
+
+showPath.addEventListener("change",()=>{
+
+    pathPoints = [];
+    rebuildPathGeometry();
+
+    pathLine.visible = showPath.checked;
+    pathDots.visible = showPath.checked;
+});
+
+function updatePath(worldPos){
+
+    if(!showPath.checked) return;
+
+    pathPoints.push(worldPos.clone());
+
+    if(pathPoints.length > 500){
+        pathPoints.shift();
+    }
+
+    rebuildPathGeometry();
+}
+
+function resetPath(){
+
+    pathPoints = [];
+    rebuildPathGeometry();
+}
+
+// --------------------
+// Jacobi vizualizáció
+// --------------------
+
+const showJacobian =
+document.getElementById("showJacobian");
+
+const JACOBIAN_JOINTS = [
+{ obj:joint1, axis:"y", color:0xff5252 },
+{ obj:joint2, axis:"z", color:0xffb142 },
+{ obj:joint3, axis:"z", color:0xfdd835 },
+{ obj:joint4, axis:"z", color:0x66bb6a },
+{ obj:joint5, axis:"z", color:0x42a5f5 },
+{ obj:joint6, axis:"y", color:0xab47bc }
+];
+
+const jacobianArrows =
+JACOBIAN_JOINTS.map((j)=>{
+
+    const arrow =
+    new THREE.ArrowHelper(
+    new THREE.Vector3(0,1,0),
+    new THREE.Vector3(),
+    0.5,
+    j.color,
+    0.15,
+    0.08
+    );
+
+    arrow.visible = false;
+
+    scene.add(arrow);
+
+    return arrow;
+});
+
+showJacobian.addEventListener("change",()=>{
+
+    if(!showJacobian.checked){
+        jacobianArrows.forEach((a)=> a.visible = false);
+    } else {
+        updateRobot();
+    }
+});
+
+function updateJacobian(worldPos){
+
+    if(!showJacobian.checked) return;
+
+    const EPS = THREE.MathUtils.degToRad(0.5);
+    const tempPos = new THREE.Vector3();
+
+    JACOBIAN_JOINTS.forEach((j,i)=>{
+
+        const original = j.obj.rotation[j.axis];
+
+        j.obj.rotation[j.axis] = original + EPS;
+
+        tcp.getWorldPosition(tempPos);
+
+        j.obj.rotation[j.axis] = original;
+
+        const dir = tempPos.clone().sub(worldPos);
+        const length = dir.length();
+
+        const arrow = jacobianArrows[i];
+
+        if(length > 1e-6){
+
+            dir.normalize();
+
+            arrow.position.copy(worldPos);
+            arrow.setDirection(dir);
+
+            const arrowLength =
+            THREE.MathUtils.clamp(length/EPS*0.15,0.4,1.3);
+
+            arrow.setLength(arrowLength,0.15,0.08);
+
+            arrow.visible = true;
+
+        } else {
+            arrow.visible = false;
+        }
+    });
+}
+
+// --------------------
+// Biztonság: Akadályok
+// --------------------
+
+const obstaclesToggle =
+document.getElementById("obstaclesToggle");
+
+const obstacleGroup =
+new THREE.Group();
+
+scene.add(obstacleGroup);
+
+const obstacleDefs = [
+{ pos:[1.1,0.6,-0.9], size:[0.35,1.0,0.35] },
+{ pos:[-1.2,1.4,0.8], size:[0.8,2.4,0.5] }
+];
+
+const obstacleMeshes =
+obstacleDefs.map((def)=>{
+
+    const mesh =
+    new THREE.Mesh(
+
+    new THREE.BoxGeometry(...def.size),
+
+    new THREE.MeshStandardMaterial({
+        color:0xff2222,
+        transparent:true,
+        opacity:0.6
+    })
+
+    );
+
+    mesh.position.set(...def.pos);
+
+    obstacleGroup.add(mesh);
+
+    return mesh;
+});
+
+obstacleGroup.visible = false;
+
+obstaclesToggle.addEventListener("change",()=>{
+    obstacleGroup.visible = obstaclesToggle.checked;
+});
+
+const robotParts =
+[base,link1,link2,link3,link4,link5,link6,tcp];
+
+function checkObstacleCollision(){
+
+    if(!obstaclesToggle.checked) return false;
+
+    for(const part of robotParts){
+
+        const partBox =
+        new THREE.Box3().setFromObject(part);
+
+        for(const obstacle of obstacleMeshes){
+
+            const obstacleBox =
+            new THREE.Box3().setFromObject(obstacle);
+
+            if(partBox.intersectsBox(obstacleBox)){
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function checkFloorCollision(){
+
+    const movingParts =
+    [link1,link2,link3,link4,link5,link6,tcp];
+
+    for(const part of movingParts){
+
+        const partBox =
+        new THREE.Box3().setFromObject(part);
+
+        if(partBox.min.y < 0){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// --------------------
+// Biztonság: Munkatér kupola
+// --------------------
+
+const domeToggle =
+document.getElementById("domeToggle");
+
+const DOME_RADIUS = 3.2;
+
+const dome =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+DOME_RADIUS,32,16,
+0,Math.PI*2,
+0,Math.PI/2
+),
+
+new THREE.MeshBasicMaterial({
+    color:0x3399ff,
+    transparent:true,
+    opacity:0.12,
+    side:THREE.DoubleSide
+})
+
+);
+
+dome.visible = false;
+
+scene.add(dome);
+
+domeToggle.addEventListener("change",()=>{
+    dome.visible = domeToggle.checked;
+});
+
+// --------------------
+// Nyomaték
+// --------------------
+
+const GRAVITY = 9.81;
+
+const weightSlider =
+document.getElementById("weightSlider");
+
+const weightValue =
+document.getElementById("weightValue");
+
+let OBJECT_MASS = Number(weightSlider.value);
+
+weightSlider.addEventListener("input",()=>{
+
+    OBJECT_MASS = Number(weightSlider.value);
+    weightValue.textContent = OBJECT_MASS.toFixed(1);
+
+    updateRobot();
+});
+
+const LINK_MASS = {
+link2:2.0,
+link3:1.2,
+link4:0.6,
+link5:0.4,
+link6:0.3
+};
+
+const JOINT_MAX_TORQUE = {
+q1:5,
+q2:110,
+q3:50,
+q4:20,
+q5:8,
+q6:5
+};
+
+const torqueEls = {
+q1:document.getElementById("q1-torque"),
+q2:document.getElementById("q2-torque"),
+q3:document.getElementById("q3-torque"),
+q4:document.getElementById("q4-torque"),
+q5:document.getElementById("q5-torque"),
+q6:document.getElementById("q6-torque")
+};
+
+const torqueWarning =
+document.getElementById("torque-warning");
+
+const LINK_BASE_COLORS = {
+link1:0x6f5cff,
+link2:0x866fff,
+link3:0xa897ff,
+link4:0xc0b3ff,
+link5:0xd9d0ff,
+link6:0xf0ecff
+};
+
+const linkMeshes = { link1,link2,link3,link4,link5,link6 };
+
+const linkBaseColors = {};
+
+for(const key in LINK_BASE_COLORS){
+    linkBaseColors[key] = new THREE.Color(LINK_BASE_COLORS[key]);
+}
+
+const LOAD_DANGER_COLOR = new THREE.Color(0xe63946);
+
+function updateArmColor(maxPercent){
+
+    const factor =
+    Math.min(Math.max(maxPercent/100,0),1);
+
+    for(const key in linkMeshes){
+
+        linkMeshes[key].material.color.lerpColors(
+        linkBaseColors[key],
+        LOAD_DANGER_COLOR,
+        factor
+        );
+    }
+}
+
+function horizontalDistance(a,b){
+    return Math.hypot(a.x - b.x, a.z - b.z);
+}
+
+function torqueAbout(jointPos,parts){
+
+    let torque = 0;
+
+    for(const part of parts){
+        torque += part.mass * GRAVITY * horizontalDistance(jointPos,part.pos);
+    }
+
+    return torque;
+}
+
+function computeTorques(){
+
+    const j2Pos = new THREE.Vector3();
+    const j3Pos = new THREE.Vector3();
+    const j4Pos = new THREE.Vector3();
+    const j5Pos = new THREE.Vector3();
+
+    joint2.getWorldPosition(j2Pos);
+    joint3.getWorldPosition(j3Pos);
+    joint4.getWorldPosition(j4Pos);
+    joint5.getWorldPosition(j5Pos);
+
+    const link2Pos = new THREE.Vector3();
+    const link3Pos = new THREE.Vector3();
+    const link4Pos = new THREE.Vector3();
+    const link5Pos = new THREE.Vector3();
+    const link6Pos = new THREE.Vector3();
+    const objectPos = new THREE.Vector3();
+
+    link2.getWorldPosition(link2Pos);
+    link3.getWorldPosition(link3Pos);
+    link4.getWorldPosition(link4Pos);
+    link5.getWorldPosition(link5Pos);
+    link6.getWorldPosition(link6Pos);
+
+    const objectMass = picked ? OBJECT_MASS : 0;
+
+    if(picked){
+        pickObject.getWorldPosition(objectPos);
+    }
+
+    const torqueQ2 = torqueAbout(j2Pos,[
+    { mass:LINK_MASS.link2, pos:link2Pos },
+    { mass:LINK_MASS.link3, pos:link3Pos },
+    { mass:LINK_MASS.link4, pos:link4Pos },
+    { mass:LINK_MASS.link5, pos:link5Pos },
+    { mass:LINK_MASS.link6, pos:link6Pos },
+    { mass:objectMass, pos:objectPos }
+    ]);
+
+    const torqueQ3 = torqueAbout(j3Pos,[
+    { mass:LINK_MASS.link3, pos:link3Pos },
+    { mass:LINK_MASS.link4, pos:link4Pos },
+    { mass:LINK_MASS.link5, pos:link5Pos },
+    { mass:LINK_MASS.link6, pos:link6Pos },
+    { mass:objectMass, pos:objectPos }
+    ]);
+
+    const torqueQ4 = torqueAbout(j4Pos,[
+    { mass:LINK_MASS.link4, pos:link4Pos },
+    { mass:LINK_MASS.link5, pos:link5Pos },
+    { mass:LINK_MASS.link6, pos:link6Pos },
+    { mass:objectMass, pos:objectPos }
+    ]);
+
+    const torqueQ5 = torqueAbout(j5Pos,[
+    { mass:LINK_MASS.link5, pos:link5Pos },
+    { mass:LINK_MASS.link6, pos:link6Pos },
+    { mass:objectMass, pos:objectPos }
+    ]);
+
+    return {
+    q1:0,
+    q2:torqueQ2,
+    q3:torqueQ3,
+    q4:torqueQ4,
+    q5:torqueQ5,
+    q6:0
+    };
+}
+
+function updateTorqueDisplay(){
+
+    const torques = computeTorques();
+
+    let anyDanger = false;
+    let maxPercent = 0;
+
+    for(const key of Object.keys(torques)){
+
+        const torque = torques[key];
+        const percent = (torque / JOINT_MAX_TORQUE[key]) * 100;
+
+        maxPercent = Math.max(maxPercent,percent);
+        maxTorquePercent[key] = Math.max(maxTorquePercent[key],percent);
+
+        const el = torqueEls[key];
+
+        el.textContent =
+        `${torque.toFixed(2)} Nm (${percent.toFixed(0)}%)`;
+
+        el.classList.remove(
+        "torque-ok","torque-warn","torque-danger"
+        );
+
+        if(percent >= 80){
+            el.classList.add("torque-danger");
+            anyDanger = true;
+        } else if(percent >= 50){
+            el.classList.add("torque-warn");
+        } else {
+            el.classList.add("torque-ok");
+        }
+    }
+
+    torqueWarning.style.display = anyDanger ? "block" : "none";
+
+    updateArmColor(maxPercent);
+}
+
+// --------------------
+// Ütközés kezelése
+// --------------------
+
+const collisionMsg =
+document.getElementById("collision-msg");
+
+let collisionMsgTimeout = null;
+
+function reportCollision(reason){
+
+    collisionCount++;
+
+    collisionMsg.textContent =
+    `${reason} (Összes ütközés: ${collisionCount})`;
+
+    collisionMsg.style.display = "block";
+
+    clearTimeout(collisionMsgTimeout);
+
+    collisionMsgTimeout = setTimeout(()=>{
+        collisionMsg.style.display = "none";
+    },3000);
+
+    if(picked && !placed){
+        spawnReplacementObject();
+    }
+}
+
+// --------------------
+// Időszámláló
+// --------------------
+
+const timerText =
+document.getElementById("timerText");
+
+const startBtn =
+document.getElementById("startBtn");
+
+let timerRunning = false;
+let timerStart = null;
+let timerInterval = null;
+let timerLocked = false;
+let finalElapsedSeconds = 0;
+
+function updateTimerDisplay(){
+
+    const elapsed =
+    (performance.now() - timerStart) / 1000;
+
+    timerText.textContent =
+    `Idő: ${elapsed.toFixed(1)} s`;
+}
+
+function startTimer(){
+
+    if(timerRunning || timerLocked) return;
+
+    timerRunning = true;
+    timerStart = performance.now();
+
+    timerInterval =
+    setInterval(updateTimerDisplay,100);
+}
+
+startBtn.addEventListener("click",startTimer);
+
+function resetTimer(){
+
+    timerRunning = false;
+    timerLocked = false;
+
+    clearInterval(timerInterval);
+
+    timerText.textContent = "Idő: 0.0 s";
+}
+
+function stopTimer(){
+
+    if(!timerRunning) return;
+
+    updateTimerDisplay();
+
+    finalElapsedSeconds = (performance.now() - timerStart) / 1000;
+
+    timerRunning = false;
+    timerLocked = true;
+
+    clearInterval(timerInterval);
+}
+
+function onJointInput(){
+
+    updateRobot();
+}
+
+// --------------------
+// Sliders
+// --------------------
+
+const q1 =
+document.getElementById("q1");
+
+const q2 =
+document.getElementById("q2");
+
+const q3 =
+document.getElementById("q3");
+
+const q4 =
+document.getElementById("q4");
+
+const q5 =
+document.getElementById("q5");
+
+const q6 =
+document.getElementById("q6");
+
+const info =
+document.getElementById("info");
+
+// --------------------
+// Update robot
+// --------------------
+
+function updateRobot(){
+
+    joint1.rotation.y =
+    Number(q1.value) *
+    Math.PI / 180;
+
+    joint2.rotation.z =
+    Number(q2.value) *
+    Math.PI / 180;
+
+    joint3.rotation.z =
+    Number(q3.value) *
+    Math.PI / 180;
+
+    joint4.rotation.z =
+    Number(q4.value) *
+    Math.PI / 180;
+
+    joint5.rotation.z =
+    Number(q5.value) *
+    Math.PI / 180;
+
+    joint6.rotation.y =
+    Number(q6.value) *
+    Math.PI / 180;
+
+    const worldPos =
+    new THREE.Vector3();
+
+    tcp.getWorldPosition(worldPos);
+
+    const floorHit = checkFloorCollision();
+    const obstacleHit = !floorHit && checkObstacleCollision();
+    const domeHit = !floorHit && !obstacleHit &&
+    domeToggle.checked && worldPos.length() > DOME_RADIUS;
+
+    const isColliding = floorHit || obstacleHit || domeHit;
+
+    if(isColliding && !wasColliding){
+
+        let reason = "\u26a0\ufe0f Ütközés egy akadállyal!";
+
+        if(floorHit){
+            reason = "\u26a0\ufe0f A kar beleütközött a padlóba!";
+        } else if(domeHit){
+            reason = "\u26a0\ufe0f Elérted a munkatér szélét!";
+        }
+
+        reportCollision(reason);
+    }
+
+    wasColliding = isColliding;
+
+    if(!picked && !placed){
+
+        const dist = worldPos.distanceTo(pickObject.position);
+
+        if(dist < PICKUP_TOLERANCE){
+
+            picked = true;
+
+            tcp.add(pickObject);
+
+            pickObject.position.set(0,-0.1,0);
+        }
+
+    } else if(picked && !placed){
+
+        if(isWithinDropZone(worldPos)){
+
+            placed = true;
+
+            scene.attach(pickObject);
+
+            pickObject.position.set(target.x,TARGET_HEIGHT,target.z);
+
+            orphanObjects.forEach((obj)=>{
+                tcp.remove(obj);
+            });
+
+            orphanObjects = [];
+
+            stopTimer();
+            showStatsModal();
+        }
+    }
+
+    updateProjection(worldPos);
+    updatePath(worldPos);
+    updateJacobian(worldPos);
+    updateTorqueDisplay();
+
+    const statusText =
+    placed ? "Lerakva ✅" :
+    picked ? "Felvéve, vidd a célterületre" :
+    "Vidd a TCP-t a tárgyhoz";
+
+    let dropInfo = "";
+
+    if(picked && !placed){
+
+        const diag = getDropZoneDiagnostics();
+
+        dropInfo = `
+        <br>
+        <strong>Eltérés a célponttól:</strong><br>
+        X túllépés: ${diag.overX.toFixed(3)} m<br>
+        Z túllépés: ${diag.overZ.toFixed(3)} m<br>
+        Y eltérés: ${diag.dy.toFixed(3)} m (határ: 0.060 m)
+        `;
+    }
+
+    info.innerHTML =
+    `
+    TCP:<br>
+    x = ${worldPos.x.toFixed(2)} m<br>
+    y = ${worldPos.y.toFixed(2)} m<br>
+    z = ${worldPos.z.toFixed(2)} m<br>
+    ${statusText}
+    ${dropInfo}
+    `;
+}
+
+q1.addEventListener("input",onJointInput);
+q2.addEventListener("input",onJointInput);
+q3.addEventListener("input",onJointInput);
+q4.addEventListener("input",onJointInput);
+q5.addEventListener("input",onJointInput);
+q6.addEventListener("input",onJointInput);
+
+updateRobot();
+
+// --------------------
+// Render
+// --------------------
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    // controls.update();
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+animate();
+
+window.addEventListener(
+"resize",
+()=>{
+
+camera.aspect =
+window.innerWidth /
+window.innerHeight;
+
+camera.updateProjectionMatrix();
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+});
+
+</script>
+
+</body>
+</html>
